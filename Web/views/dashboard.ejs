@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng dữ liệu - Đánh giá từng khu vực</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Bảng điều khiển</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard" class="active">📊 Biểu đồ quan sát</a>
+        <a href="/regions">🏠 Danh sách khu vực</a>
+        <a href="/history">📜 Lịch sử</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="/logout">🚪 Đăng xuất</a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <h2>Các khu vực đã lắp đặt thiết bị theo dõi</h2>
+      <div class="regions-grid">
+        <% if (regions.length===0) { %>
+          <p>Chưa có khu vực nào. <a href="/regions">Thêm khu vực mới</a></p>
+          <% } else { %>
+            <% regions.forEach(function(region) { %>
+              <div class="region-box" onclick="location.href='/dashboard/region/<%= region.id %>'"
+                data-region-id="<%= region.id %>">
+                <h3>
+                  <%= region.name %>
+                </h3>
+                <p><strong>Địa chỉ IP:</strong>
+                  <%= region.ip %>
+                </p>
+                <p><strong>Kết nối đến thiết bị:</strong> <span class="status <%= region.is_online ? 'on' : 'off' %>">
+                    <%= region.is_online ? '🟢 Trực tuyến' : '⚫ Ngoại tuyến' %>
+                  </span></p>
+              </div>
+              <% }); %>
+                <% } %>
+      </div>
+    </main>
+  </div>
+  <script>
+    const socket = io();
+
+    // Real-time cập nhật nhiệt độ và độ ẩm
+    socket.on('data_from_esp32_update', data => {
+      const regionBox = document.querySelector(`[data-region-id="${data.regionId}"]`);
+      if (regionBox) {
+        const tempDisplay = regionBox.querySelector('.temp-display');
+        const humidityDisplay = regionBox.querySelector('.humidity-display');
+        if (tempDisplay && humidityDisplay) {
+          tempDisplay.textContent = `🌡️ ${parseFloat(data.temperature).toFixed(1)}°C`;
+          humidityDisplay.textContent = `💧 ${parseFloat(data.humidity).toFixed(1)}%`;
+
+          // Hiệu ứng flash khi cập nhật
+          tempDisplay.style.animation = 'flash 0.5s';
+          humidityDisplay.style.animation = 'flash 0.5s';
+          setTimeout(() => {
+            tempDisplay.style.animation = '';
+            humidityDisplay.style.animation = '';
+          }, 500);
+        }
+      }
+    });
+  </script>
+  <style>
+    @keyframes flash {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.3;
+        transform: scale(1.1);
+      }
+    }
+  </style>
+</body>
+
+</html>

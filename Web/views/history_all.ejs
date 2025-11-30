@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lịch sử - Quản lý khu vực</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Bảng điều khiển</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard">📊 Biểu đồ quan sát</a>
+        <a href="/regions">🏠 Danh sách khu vực</a>
+        <a href="/history" class="active">📜 Lịch sử</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="/logout">🚪 Đăng xuất</a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <h2>📜 Lịch sử dữ liệu ghi nhận tại các khu vực</h2>
+      <p style="margin-bottom:32px; font-size:17px; color:#666;">Chọn khu vực để xem lịch sử chi tiết</p>
+      
+      <div class="regions-grid">
+        <% if (regions.length === 0) { %>
+          <p>Chưa có khu vực nào. <a href="/regions">Thêm khu vực mới</a></p>
+        <% } else { %>
+          <% regions.forEach(function(region) { %>
+            <div class="region-box" onclick="location.href='/history/<%= region.id %>'">
+              <h3><%= region.name %></h3>
+              <p><strong>IP:</strong> <%= region.ip %></p>
+              <p><strong>Kết nối:</strong> <span class="status <%= region.is_online ? 'on' : 'off' %>"><%= region.is_online ? '🟢 Online' : '⚫ Offline' %></span></p>
+              <p style="margin-top:16px; color:#007bff; font-weight:600;">📜 Xem lịch sử →</p>
+            </div>
+          <% }); %>
+        <% } %>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

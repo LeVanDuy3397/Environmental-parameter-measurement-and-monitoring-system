@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chi tiết khu vực - <%= region.name %></title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Quản lý khu vực</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard">📊 Bảng điều khiển</a>
+        <a href="/regions">🏠 Danh sách khu vực</a>
+        <a href="/history">📜 Lịch sử</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="/logout">🚪 Đăng xuất</a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <h2>Chi tiết khu vực: <%= region.name %></h2>
+      <!-- Thông tin khu vực -->
+      <div class="region-info">
+        <p><strong>Địa chỉ IP:</strong> <%= region.ip %></p>
+        <p><strong>Kết nối với thiết bị đo tại khu vực này :</strong> <span id="is_online" class="status <%= region.is_online ? 'on' : 'off' %>"><%= region.is_online ? '🟢 Trực tuyến' : '⚫ Ngoại tuyến' %></span></p>
+      </div>
+
+      <div class="chart-container">
+        <h3>📈 Biểu đồ nhiệt độ</h3>
+        <canvas id="tempChart" width="400" height="150"></canvas>
+      </div>
+
+      <div class="chart-container" style="margin-top: 30px;">
+        <h3>📈 Biểu đồ độ ẩm</h3>
+        <canvas id="humidityChart" width="400" height="150"></canvas>
+      </div>
+
+      <div class="chart-container" style="margin-top: 30px;">
+        <h3>📈 Biểu đồ nồng độ bụi</h3>
+        <canvas id="dustChart" width="400" height="150"></canvas>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button onclick="location.href='/history/<%= region.id %>'">📜 Xem lịch sử đầy đủ</button>
+      </div>
+    </main>
+  </div>
+
+ <script>
+  const tempData = JSON.parse('<%- JSON.stringify(history.map(h => h.temperature).reverse()) %>');
+  const humidityData = JSON.parse('<%- JSON.stringify(history.map(h => h.humidity).reverse()) %>');
+  const dustData = JSON.parse('<%- JSON.stringify(history.map(h => h.dust).reverse()) %>');
+  const labels = JSON.parse('<%- JSON.stringify(history.map(h => (new Date(h.createdAt)).toLocaleTimeString()).reverse()) %>');
+
+  const ctx1 = document.getElementById('tempChart').getContext('2d');
+  
+  const tempChart = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Nhiệt độ (°C)',
+        data: tempData,
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: 'rgb(75, 192, 192)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgb(75, 192, 192)',
+        pointHoverBorderWidth: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      animation: {
+        duration: 750,
+        easing: 'easeInOutQuart'
+      },
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            usePointStyle: true,
+            padding: 15,
+            font: {
+              size: 13,
+              weight: 'bold'
+            }
+          }
+        },
+        tooltip: {
+          enabled: true,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          titleFont: {
+            size: 14,
+            weight: 'bold'
+          },
+          bodyFont: {
+            size: 13
+          },
+          padding: 12,
+          cornerRadius: 8,
+          displayColors: true,
+          callbacks: {
+            label: function(context) {
+              return ' Nhiệt độ: ' + context.parsed.y.toFixed(1) + '°C';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          display: true,
+          grid: {
+            display: true,
+            color: 'rgba(0, 0, 0, 0.05)'
+          },
+          ticks: {
+            maxTicksLimit: 10,
+            font: {
+              size: 11
+            }
+          }
+        },
+        y: {
+          beginAtZero: true,
+          min: 0,
+          max: 60,
+          grid: {
+            display: true,
+            color: 'rgba(0, 0, 0, 0.05)'
+          },
+          ticks: {
+            font: {
+              size: 11
+            },
+            callback: function(value) {
+              return value + '°C';
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const ctx2 = document.getElementById('humidityChart').getContext('2d');
+  const humidityChart = new Chart(ctx2, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Độ ẩm (%)',
+        data: humidityData,
+        borderColor: 'rgb(54, 162, 235)',
+        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: 'rgb(54, 162, 235)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgb(54, 162, 235)',
+        pointHoverBorderWidth: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      animation: {
+        duration: 750,
+        easing: 'easeInOutQuart'
+      },
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            usePointStyle: true,
+            padding: 15,
+            font: {
+              size: 13,
+              weight: 'bold'
+            }
+          }
+        },
+        tooltip: {
+          enabled: true,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          titleFont: {
+            size: 14,
+            weight: 'bold'
+          },
+          bodyFont: {
+            size: 13
+          },
+          padding: 12,
+          cornerRadius: 8,
+          displayColors: true,
+          callbacks: {
+            label: function(context) {
+              return ' Độ ẩm: ' + context.parsed.y.toFixed(1) + '%';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          display: true,
+          grid: {
+            display: true,
+            color: 'rgba(0, 0, 0, 0.05)'
+          },
+          ticks: {
+            maxTicksLimit: 10,
+            font: {
+              size: 11
+            }
+          }
+        },
+        y: {
+          beginAtZero: true,
+          min: 0,
+          max: 100
+        }
+      }
+    }
+  });
+
+  const ctx3 = document.getElementById('dustChart').getContext('2d');
+
+// Plugin để vẽ các vùng màu nền
+const backgroundColorPlugin = {
+  id: 'backgroundColorPlugin',
+  beforeDraw: (chart) => {
+    const ctx = chart.ctx;
+    const chartArea = chart.chartArea;
+    const yScale = chart.scales.y;
+    
+    // Định nghĩa các vùng màu theo bảng
+    const zones = [
+      { min: 0, max: 12, color: 'rgba(76, 175, 80, 0.1)' },      // Xanh lá - Tốt
+      { min: 12, max: 35.4, color: 'rgba(255, 235, 59, 0.1)' },  // Vàng - Trung bình
+      { min: 35.4, max: 55.4, color: 'rgba(255, 152, 0, 0.15)' },// Cam - Không tốt
+      { min: 55.4, max: 150.4, color: 'rgba(244, 67, 54, 0.15)' },// Đỏ - Kém
+      { min: 150.4, max: 250.4, color: 'rgba(156, 39, 176, 0.15)' },// Tím - Rất kém
+      { min: 250.4, max: 300, color: 'rgba(121, 85, 72, 0.2)' }  // Nâu đỏ - Nguy hại
+    ];
+    
+    ctx.save();
+    zones.forEach(zone => {
+      const yTop = yScale.getPixelForValue(zone.max);
+      const yBottom = yScale.getPixelForValue(zone.min);
+      
+      ctx.fillStyle = zone.color;
+      ctx.fillRect(
+        chartArea.left,
+        yTop,
+        chartArea.right - chartArea.left,
+        yBottom - yTop
+      );
+    });
+    ctx.restore();
+  }
+};
+
+const dustChart = new Chart(ctx3, {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'Nồng độ bụi (μg/m³)',
+      data: dustData,
+      borderColor: 'rgb(33, 33, 33)',
+      backgroundColor: 'rgba(33, 33, 33, 0.1)',
+      borderWidth: 3,
+      fill: true,
+      tension: 0.4,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      pointBackgroundColor: function(context) {
+        const value = context.parsed.y;
+        if (value <= 12) return 'rgb(76, 175, 80)';        // Xanh lá
+        if (value <= 35.4) return 'rgb(255, 235, 59)';     // Vàng
+        if (value <= 55.4) return 'rgb(255, 152, 0)';      // Cam
+        if (value <= 150.4) return 'rgb(244, 67, 54)';     // Đỏ
+        if (value <= 250.4) return 'rgb(156, 39, 176)';    // Tím
+        return 'rgb(121, 85, 72)';                          // Nâu đỏ
+      },
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      pointHoverBackgroundColor: '#fff',
+      pointHoverBorderWidth: 3,
+      segment: {
+        borderColor: function(context) {
+          const value = context.p1.parsed.y;
+          if (value <= 12) return 'rgb(76, 175, 80)';
+          if (value <= 35.4) return 'rgb(255, 235, 59)';
+          if (value <= 55.4) return 'rgb(255, 152, 0)';
+          if (value <= 150.4) return 'rgb(244, 67, 54)';
+          if (value <= 250.4) return 'rgb(156, 39, 176)';
+          return 'rgb(121, 85, 72)';
+        }
+      }
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    animation: {
+      duration: 750,
+      easing: 'easeInOutQuart'
+    },
+    interaction: {
+      mode: 'index',
+      intersect: false
+    },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 15,
+          font: {
+            size: 13,
+            weight: 'bold'
+          }
+        }
+      },
+      tooltip: {
+        enabled: true,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleFont: {
+          size: 14,
+          weight: 'bold'
+        },
+        bodyFont: {
+          size: 13
+        },
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: true,
+        callbacks: {
+          label: function(context) {
+            const value = context.parsed.y;
+            let level = '';
+            if (value <= 12) level = ' (Tốt)';
+            else if (value <= 35.4) level = ' (Trung bình)';
+            else if (value <= 55.4) level = ' (Không tốt cho nhóm nhạy cảm)';
+            else if (value <= 150.4) level = ' (Kém)';
+            else if (value <= 250.4) level = ' (Rất kém)';
+            else level = ' (Nguy hại)';
+            
+            return ' Nồng độ bụi: ' + value.toFixed(1) + 'μg/m³' + level;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        display: true,
+        grid: {
+          display: true,
+          color: 'rgba(0, 0, 0, 0.05)'
+        },
+        ticks: {
+          maxTicksLimit: 10,
+          font: {
+            size: 11
+          }
+        }
+      },
+      y: {
+        beginAtZero: true,
+        min: 0,
+        max: 300,
+        grid: {
+          display: true,
+          color: 'rgba(0, 0, 0, 0.1)'
+        },
+        ticks: {
+          font: {
+            size: 11
+          },
+          callback: function(value) {
+            return value + ' μg/m³';
+          }
+        }
+      }
+    }
+  },
+  plugins: [backgroundColorPlugin]
+});
+
+  // ✅ Socket.IO - Real-time updates
+  const socket = io();
+  const regionId = '<%= region.id %>';
+
+  socket.on('connect', () => {
+    console.log('✅ Socket connected:', socket.id);
+  });
+
+  // Lắng nghe dữ liệu sensor mới
+  socket.on('data_from_esp32_update', data => {
+    if (String(data.regionId) === regionId) {
+      const now = new Date().toLocaleTimeString();
+      const is_online = document.getElementById('is_online');
+
+      if (typeof data.is_online === 'boolean') {
+        is_online.className = 'status ' + (data.is_online ? 'on' : 'off');
+        is_online.textContent = data.is_online ? '🟢 Trực tuyến' : '⚫ Ngoại tuyến';
+
+        tempChart.data.labels.push(now);
+        tempChart.data.datasets[0].data.push(parseFloat(data.temperature));
+        humidityChart.data.labels.push(now);
+        humidityChart.data.datasets[0].data.push(parseFloat(data.humidity));
+        dustChart.data.labels.push(now);
+        dustChart.data.datasets[0].data.push(parseFloat(data.dust));
+      
+        if (tempChart.data.labels.length > 30) {
+          tempChart.data.labels.shift();
+          tempChart.data.datasets[0].data.shift();
+        }
+        if (humidityChart.data.labels.length > 30) {
+          humidityChart.data.labels.shift();
+          humidityChart.data.datasets[0].data.shift();
+        }
+        if (dustChart.data.labels.length > 30) {
+          dustChart.data.labels.shift();
+          dustChart.data.datasets[0].data.shift();
+        }
+      
+        tempChart.update();
+        humidityChart.update();
+        dustChart.update();
+
+        console.log('📊 Chart updated with new temperature:', data.temperature + '°C');
+        console.log('📊 Chart updated with new humidity:', data.humidity + '%');
+        console.log('📊 Chart updated with new dust:', data.dust + '%');
+      }
+    }
+  });
+</script>
+</body>
+</html>

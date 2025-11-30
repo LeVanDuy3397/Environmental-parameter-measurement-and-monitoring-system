@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lịch sử khu vực: <%= region.name %> - Quản lý khu vực</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    /* Styling cho bảng lịch sử */
+    #historyTable {
+      width: 100%;
+      border-collapse: collapse;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    #historyTable thead {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    #historyTable thead th {
+      color: white;
+      padding: 16px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border: none;
+    }
+
+    #historyTable thead th:nth-child(1) {
+      background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+    }
+
+    #historyTable thead th:nth-child(2) {
+      background: linear-gradient(135deg, #ec4899 0%, #dc2626 100%);
+    }
+
+    #historyTable thead th:nth-child(3) {
+      background: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%);
+    }
+
+    #historyTable thead th:nth-child(4) {
+      background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+    }
+
+    #historyTable tbody tr {
+      transition: all 0.3s ease;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    #historyTable tbody tr:hover {
+      background-color: #f5f7fa;
+      transform: scale(1.01);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    #historyTable tbody tr:nth-child(even) {
+      background-color: #fafbfc;
+    }
+
+    #historyTable tbody td {
+      padding: 14px 12px;
+      color: #333;
+      font-size: 14px;
+    }
+
+    #historyTable tbody td:nth-child(1) {
+      color: #667eea;
+      font-weight: 500;
+    }
+
+    #historyTable tbody td:nth-child(2) {
+      color: #f5576c;
+      font-weight: 600;
+    }
+
+    #historyTable tbody td:nth-child(3) {
+      color: #00b4d8;
+      font-weight: 600;
+    }
+
+    #historyTable tbody td:nth-child(4) {
+      color: #06d6a0;
+      font-weight: 600;
+    }
+
+    /* Animation cho dòng mới */
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* Badge styling cho giá trị */
+    .temp-badge, .humidity-badge, .dust-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .temp-badge {
+      background-color: #ffe5e5;
+      color: #c92a2a;
+    }
+
+    .humidity-badge {
+      background-color: #e3f2fd;
+      color: #1565c0;
+    }
+
+    .dust-badge {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    /* Các mức độ chất lượng không khí theo tiêu chuẩn */
+    .dust-badge.good {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .dust-badge.moderate {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+
+    .dust-badge.sensitive {
+      background-color: #ffe5d0;
+      color: #d35400;
+    }
+
+    .dust-badge.unhealthy {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .dust-badge.very-unhealthy {
+      background-color: #e8daef;
+      color: #5b2c6f;
+    }
+
+    .dust-badge.hazardous {
+      background-color: #d5d8dc;
+      color: #2c3e50;
+    }
+
+    /* Chỉ báo màu tròn */
+    .air-quality-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 4px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.2);
+    }
+
+    .indicator-good { background-color: #4caf50; }
+    .indicator-moderate { background-color: #ffc107; }
+    .indicator-sensitive { background-color: #ff9800; }
+    .indicator-unhealthy { background-color: #f44336; }
+    .indicator-very-unhealthy { background-color: #9c27b0; }
+    .indicator-hazardous { background-color: #795548; }
+
+    /* Chú thích chất lượng không khí */
+    .air-quality-legend {
+      margin: 20px 0;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .air-quality-legend h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      color: #333;
+      font-size: 16px;
+    }
+
+    .legend-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 6px;
+      background-color: #f8f9fa;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .legend-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+      z-index: 10;
+    }
+
+    .legend-item:hover .air-quality-indicator {
+      transform: scale(1.3);
+      box-shadow: 0 0 8px rgba(0,0,0,0.3);
+    }
+
+    /* Hiệu ứng riêng cho từng loại */
+    .legend-item.good:hover {
+      background-color: #d4edda;
+      border: 2px solid #4caf50;
+    }
+
+    .legend-item.moderate:hover {
+      background-color: #fff3cd;
+      border: 2px solid #ffc107;
+    }
+
+    .legend-item.sensitive:hover {
+      background-color: #ffe5d0;
+      border: 2px solid #ff9800;
+    }
+
+    .legend-item.unhealthy:hover {
+      background-color: #f8d7da;
+      border: 2px solid #f44336;
+    }
+
+    .legend-item.very-unhealthy:hover {
+      background-color: #e8daef;
+      border: 2px solid #9c27b0;
+    }
+
+    .legend-item.hazardous:hover {
+      background-color: #d5d8dc;
+      border: 2px solid #795548;
+    }
+
+    .legend-item .air-quality-indicator {
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+    }
+
+    .legend-text {
+      font-size: 13px;
+    }
+
+    .legend-text .label {
+      font-weight: 600;
+      display: block;
+      transition: all 0.3s ease;
+    }
+
+    .legend-item:hover .label {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .legend-text .range {
+      color: #666;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Quản lý khu vực</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard">📊 Bảng điều khiển</a>
+        <a href="/regions">🏠 Danh sách khu vực</a>
+        <a href="/history" class="active">📜 Lịch sử</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="/logout">🚪 Đăng xuất</a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <h2>📜 Lịch sử khu vực: <%= region.name %></h2>
+      <p style="margin-bottom:20px;"><strong>Địa chỉ IP:</strong> <%= region.ip %></p>
+      
+      <!-- Chú thích chất lượng không khí -->
+      <div class="air-quality-legend">
+        <h3>📋 Chỉ số chất lượng không khí (AQI)</h3>
+        <div class="legend-items">
+          <div class="legend-item">
+            <span class="air-quality-indicator indicator-good"></span>
+            <div class="legend-text">
+              <span class="label">Tốt</span>
+              <span class="range">0 - 12 μg/m³</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="air-quality-indicator indicator-moderate"></span>
+            <div class="legend-text">
+              <span class="label">Trung bình</span>
+              <span class="range">12.1 - 35.4 μg/m³</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="air-quality-indicator indicator-sensitive"></span>
+            <div class="legend-text">
+              <span class="label">Không tốt cho nhóm nhạy cảm</span>
+              <span class="range">35.5 - 55.4 μg/m³</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="air-quality-indicator indicator-unhealthy"></span>
+            <div class="legend-text">
+              <span class="label">Kém</span>
+              <span class="range">55.5 - 150.4 μg/m³</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="air-quality-indicator indicator-very-unhealthy"></span>
+            <div class="legend-text">
+              <span class="label">Rất kém</span>
+              <span class="range">150.5 - 250.4 μg/m³</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="air-quality-indicator indicator-hazardous"></span>
+            <div class="legend-text">
+              <span class="label">Nguy hại</span>
+              <span class="range">> 250.5 μg/m³</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>🕐 Thời gian</th>
+            <th>🌡️ Nhiệt độ</th>
+            <th>💧 Độ ẩm</th>
+            <th>🌫️ Nồng độ bụi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (history.length === 0) { %>
+            <tr><td colspan="4" style="text-align:center;">Chưa có dữ liệu lịch sử</td></tr>
+          <% } else { %>
+            <% history.forEach(function(h) { 
+              var dustClass = '';
+              var indicatorClass = '';
+              var dust = parseFloat(h.dust);
+              
+              if (dust <= 12) {
+                dustClass = 'good';
+                indicatorClass = 'indicator-good';
+              } else if (dust <= 35.4) {
+                dustClass = 'moderate';
+                indicatorClass = 'indicator-moderate';
+              } else if (dust <= 55.4) {
+                dustClass = 'sensitive';
+                indicatorClass = 'indicator-sensitive';
+              } else if (dust <= 150.4) {
+                dustClass = 'unhealthy';
+                indicatorClass = 'indicator-unhealthy';
+              } else if (dust <= 250.4) {
+                dustClass = 'very-unhealthy';
+                indicatorClass = 'indicator-very-unhealthy';
+              } else {
+                dustClass = 'hazardous';
+                indicatorClass = 'indicator-hazardous';
+              }
+            %>
+              <tr>
+                <td><%= new Date(h.createdAt).toLocaleString('vi-VN') %></td>
+                <td><span class="temp-badge"><%= h.temperature %>°C</span></td>
+                <td><span class="humidity-badge"><%= h.humidity %>%</span></td>
+                <td>
+                  <span class="dust-badge <%= dustClass %>">
+                    <span class="air-quality-indicator <%= indicatorClass %>"></span>
+                    <%= h.dust %> μg/m³
+                  </span>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+      
+      <div style="margin-top:20px;">
+        <button onclick="location.href='/dashboard/region/<%= region.id %>'">⬅️ Quay lại chi tiết khu vực</button>
+      </div>
+    </main>
+  </div>
+  
+  <script>
+    const socket = io();
+    const regionId = '<%= region.id %>';
+    const historyBody = document.querySelector('#historyTable tbody');
+
+    function getAirQualityInfo(dust) {
+      const value = parseFloat(dust);
+      let dustClass = '';
+      let indicatorClass = '';
+      
+      if (value <= 12) {
+        dustClass = 'good';
+        indicatorClass = 'indicator-good';
+      } else if (value <= 35.4) {
+        dustClass = 'moderate';
+        indicatorClass = 'indicator-moderate';
+      } else if (value <= 55.4) {
+        dustClass = 'sensitive';
+        indicatorClass = 'indicator-sensitive';
+      } else if (value <= 150.4) {
+        dustClass = 'unhealthy';
+        indicatorClass = 'indicator-unhealthy';
+      } else if (value <= 250.4) {
+        dustClass = 'very-unhealthy';
+        indicatorClass = 'indicator-very-unhealthy';
+      } else {
+        dustClass = 'hazardous';
+        indicatorClass = 'indicator-hazardous';
+      }
+      
+      return { dustClass, indicatorClass };
+    }
+
+    // Real-time: Thêm dòng mới vào bảng lịch sử
+    socket.on('data_from_esp32_update', data => {
+      if (String(data.regionId) === regionId) {
+        if (typeof data.is_online !== 'boolean') return;
+
+        // Xóa dòng "Chưa có dữ liệu" nếu có
+        const noDataRow = historyBody.querySelector('tr td[colspan="4"]');
+        if (noDataRow) {
+          noDataRow.parentElement.remove();
+        }
+
+        // Tạo dòng mới
+        const newRow = document.createElement('tr');
+        newRow.style.animation = 'slideIn 0.5s';
+
+        const now = new Date().toLocaleString('vi-VN');
+        const temp = parseFloat(data.temperature).toFixed(1);
+        const humidity = parseFloat(data.humidity).toFixed(1);
+        const dust = parseFloat(data.dust).toFixed(1);
+        const { dustClass, indicatorClass } = getAirQualityInfo(dust);
+        
+        newRow.innerHTML = `
+          <td>${now}</td>
+          <td><span class="temp-badge">${temp}°C</span></td>
+          <td><span class="humidity-badge">${humidity}%</span></td>
+          <td>
+            <span class="dust-badge ${dustClass}">
+              <span class="air-quality-indicator ${indicatorClass}"></span>
+              ${dust} μg/m³
+            </span>
+          </td>
+        `;
+
+        // Thêm vào đầu bảng
+        historyBody.insertBefore(newRow, historyBody.firstChild);
+
+        // Giới hạn 100 dòng
+        if (historyBody.children.length > 100) {
+          historyBody.removeChild(historyBody.lastChild);
+        }
+
+        console.log('📊 History table updated with new data');
+      }
+    });
+  </script>
+</body>
+</html>

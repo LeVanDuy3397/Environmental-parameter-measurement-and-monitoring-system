@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý thông tin các khu vực</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    /* Hiệu ứng nổi cho tất cả các nút */
+    button, .sidebar-nav a, .sidebar-footer a {
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    
+    /* Hiệu ứng nổi lên khi hover */
+    button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    button:active {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Hiệu ứng cho sidebar links */
+    .sidebar-nav a:hover, .sidebar-footer a:hover {
+      transform: translateX(5px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Hiệu ứng đặc biệt cho nút thêm khu vực */
+    button[type="submit"]:hover {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      box-shadow: 0 6px 25px rgba(40, 167, 69, 0.3);
+    }
+    
+    /* Hiệu ứng cho nút ví dụ */
+    button[onclick="showExamples()"]:hover {
+      background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+      box-shadow: 0 6px 25px rgba(23, 162, 184, 0.3);
+    }
+    
+    /* Hiệu ứng cho nút xem chi tiết */
+    button:not([type]):not([onclick*="Examples"]):hover {
+      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+      box-shadow: 0 6px 25px rgba(0, 123, 255, 0.3);
+    }
+    
+    /* Hiệu ứng cho nút sửa */
+    .btn-warning:hover {
+      background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+      box-shadow: 0 6px 25px rgba(255, 193, 7, 0.3);
+    }
+    
+    /* Hiệu ứng cho nút xóa */
+    .btn-danger:hover {
+      background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+      box-shadow: 0 6px 25px rgba(220, 53, 69, 0.3);
+    }
+    
+    /* Animation cho examples box */
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes slideUp {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+    }
+    
+    #examplesBox.hiding {
+      animation: slideUp 0.3s ease;
+    }
+    
+    .example-item {
+      background: white;
+      padding: 8px 12px;
+      margin: 5px 0;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid #e0e0e0;
+    }
+    
+    .example-item:hover {
+      background: #2196F3;
+      color: white;
+      border-color: #2196F3;
+      transform: translateX(5px);
+      box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+    }
+    
+    .example-item code {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    .example-item:hover code {
+      color: white;
+    }
+    
+    /* Hiệu ứng ripple khi click */
+    button::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+    
+    button:active::after {
+      width: 200px;
+      height: 200px;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Bảng điều khiển</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard">📊 Biểu đồ quan sát</a>
+        <a href="/regions" class="active">🏠 Danh sách khu vực</a>
+        <a href="/history">📜 Lịch sử</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="/logout">🚪 Đăng xuất</a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <h2>Quản lý thông tin khu vực</h2>
+      <% if (errors && errors.length > 0) { %>
+        <div class="alert alert-danger">
+          <ul>
+            <% errors.forEach(function(error) { %>
+              <li><%= error.msg %></li>
+            <% }); %>
+          </ul>
+        </div>
+      <% } %>
+      
+      <form action="/regions/add" method="POST" class="form-inline">
+        <input type="text" name="name" placeholder="Tên khu vực (VD: Phòng khách)" required>
+        <input type="text" name="ip" id="ipInput" placeholder="IP hoặc Domain (VD: 192.168.1.100 hoặc esp32.example.com:4000)" required>
+        <button type="submit">➕ Thêm khu vực</button>
+        <button type="button" onclick="showExamples()" style="background: #17a2b8; margin-left: 10px;">❓ Ví dụ</button>
+      </form>
+      
+      <div id="examplesBox" style="display: none; background: #e7f3ff; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #2196F3;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <strong style="font-size: 16px;">💡 Ví dụ nhập địa chỉ</strong>
+          <button onclick="hideExamples()" style="background: transparent; border: none; font-size: 20px; cursor: pointer; color: #666;">&times;</button>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+          <!-- Cột 1 -->
+          <div>
+            <p style="margin: 5px 0; font-weight: bold; color: #2196F3;">📍 IP cục bộ (Local):</p>
+            <div class="example-item" onclick="fillExample('192.168.1.100')">
+              <code>192.168.1.100</code>
+            </div>
+            <div class="example-item" onclick="fillExample('192.168.1.100:80')">
+              <code>192.168.1.100:80</code>
+            </div>
+            
+            <p style="margin: 15px 0 5px 0; font-weight: bold; color: #2196F3;">🖥️ Localhost:</p>
+            <div class="example-item" onclick="fillExample('localhost:4000')">
+              <code>localhost:4000</code>
+            </div>
+            <div class="example-item" onclick="fillExample('127.0.0.1:4000')">
+              <code>127.0.0.1:4000</code>
+            </div>
+          </div>
+          
+          <!-- Cột 2 -->
+          <div>
+            <p style="margin: 5px 0; font-weight: bold; color: #2196F3;">🌐 Tên miền (Domain):</p>
+            <div class="example-item" onclick="fillExample('esp32.example.com')">
+              <code>esp32.example.com</code>
+            </div>
+            <div class="example-item" onclick="fillExample('esp32.example.com:4000')">
+              <code>esp32.example.com:4000</code>
+            </div>
+            
+            <p style="margin: 15px 0 5px 0; font-weight: bold; color: #2196F3;">☁️ cPanel/Hosting:</p>
+            <div class="example-item" onclick="fillExample('esp32simulator.yourdomain.com:4000')">
+              <code>esp32simulator.yourdomain.com:4000</code>
+            </div>
+          </div>
+        </div>
+        
+        <div style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-top: 15px; border-left: 3px solid #ffc107;">
+          <strong>⚠️ Lưu ý:</strong>
+          <ul style="margin: 8px 0 0 20px; font-size: 13px;">
+            <li>Nếu không ghi port, mặc định sẽ dùng port <strong>80</strong></li>
+            <li>ESP32 simulator thường chạy trên port <strong>4000</strong> hoặc <strong>3000</strong></li>
+            <li>Không cần thêm <code>http://</code> hoặc dấu <code>/</code> ở cuối</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Danh sách khu vực</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Tên khu vực</th>
+            <th>Địa chỉ (IP/Domain)</th>
+            <th>Kết nối</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (regions.length === 0) { %>
+            <tr><td colspan="6" style="text-align:center;">Chưa có khu vực nào</td></tr>
+          <% } else { %>
+            <% regions.forEach(function(region) { %>
+              <tr>
+                <td><strong><%= region.name %></strong></td>
+                <td><%= region.ip %></td>
+                <td>
+                  <span class="status <%= region.is_online ? 'on' : 'off' %>">
+                    <%= region.is_online ? '🟢 Trực tuyến' : '⚫ Ngoại tuyến' %>
+                  </span>
+                </td>
+                <td>
+                  <button onclick="location.href='/dashboard/region/<%= region.id %>'">📈 Xem chi tiết</button>
+                  <button class="btn-warning btn-edit" data-id="<%= region.id %>" data-name="<%= region.name %>" data-ip="<%= region.ip %>">✏️ Sửa</button>
+                  <form action="/regions/delete/<%= region.id %>" method="POST" style="display:inline;" onsubmit="return confirm('Bạn có chắc muốn xóa khu vực này?')">
+                    <button type="submit" class="btn-danger">❌ Xóa</button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </main>
+  </div>
+  
+  <script>
+    // Hàm hiển thị phần ví dụ
+    function showExamples() {
+      const examplesBox = document.getElementById('examplesBox');
+      if (examplesBox.style.display === 'none') {
+        examplesBox.classList.remove('hiding');
+        examplesBox.style.display = 'block';
+        examplesBox.style.animation = 'slideDown 0.3s ease';
+      }
+    }
+    
+    // Hàm ẩn phần ví dụ
+    function hideExamples() {
+      const examplesBox = document.getElementById('examplesBox');
+      examplesBox.classList.add('hiding');
+      setTimeout(() => {
+        examplesBox.style.display = 'none';
+        examplesBox.classList.remove('hiding');
+      }, 300);
+    }
+    
+    // Hàm điền ví dụ vào input
+    function fillExample(value) {
+      const ipInput = document.getElementById('ipInput');
+      ipInput.value = value;
+      ipInput.focus();
+      
+      // Thêm hiệu ứng highlight cho input
+      ipInput.style.background = '#ffffcc';
+      setTimeout(() => {
+        ipInput.style.background = '';
+      }, 500);
+      
+      // Tự động ẩn phần ví dụ sau khi chọn
+      hideExamples();
+    }
+    
+    // Xử lý sự kiện click cho các nút Sửa
+    document.addEventListener('DOMContentLoaded', function() {
+      const editButtons = document.querySelectorAll('.btn-edit');
+      editButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          const id = this.getAttribute('data-id');
+          const name = this.getAttribute('data-name');
+          const ip = this.getAttribute('data-ip');
+          editRegion(id, name, ip);
+        });
+      });
+    });
+
+    function editRegion(id, name, ip) {
+      const newName = prompt('Nhập tên khu vực mới:', name);
+      const newIp = prompt('Nhập địa chỉ mới (IP/Domain với port):\nVí dụ: 192.168.1.100:80 hoặc esp32.example.com:4000', ip);
+      if (newName && newIp) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/regions/edit/' + id;
+        const nameInput = document.createElement('input');
+        nameInput.type = 'hidden';
+        nameInput.name = 'name';
+        nameInput.value = newName;
+        const ipInput = document.createElement('input');
+        ipInput.type = 'hidden';
+        ipInput.name = 'ip';
+        ipInput.value = newIp;
+        form.appendChild(nameInput);
+        form.appendChild(ipInput);
+        document.body.appendChild(form);
+        form.submit();
+      }
+    }
+  </script>
+</body>
+</html>
