@@ -3,7 +3,7 @@
 Dự án này gồm:
 - ESP32 thu thập dữ liệu (nhiệt độ, độ ẩm, nồng độ bụi) sau đó gửi lên server và màn hình LCD
 - Server Node.js nhận dữ liệu từ ESP32 qua HTTP, thực hiện lưu trữ dữ liệu vào CSDL MySQL, đồng thời thực hiện vẽ biểu đồ khi các thông số thay đổi, hiển thị lịch sử trên trình duyệt Web
-- Trước khi vào thì cần đăng ký tài khoản người dùng, phần mềm Web sẽ giúp người dùng quản lý được những khu vực đã lắp đặt thiết bị để theo dõi thông số của những khu vực đó
+- Trước khi vào thì cần đăng ký tài khoản người dùng, Web sẽ giúp người dùng quản lý được những khu vực đã lắp đặt thiết bị để theo dõi sự thay đổi của nhiệt độ, độ ẩm và nồng độ bụi trong môi trường 
 - Chú ý: IP điền để thêm thiết bị là IP của ESP32, khi truy cập vào mỗi đường mạng khác nhau IP sẽ thay đổi random
 
 ## 📚 Hướng dẫn để chạy dự án
