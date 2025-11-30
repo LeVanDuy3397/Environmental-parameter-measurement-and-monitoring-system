@@ -30,7 +30,7 @@ node app.js
 ### Đăng nhập, đăng ký
 ![Đăng nhập](dangnhap.jpg)
 ---
-### thiếp lập các khu vực đo, giám sát
+### Thiếp lập các khu vực đo, giám sát
 ![Trang chính](chinh.jpg)
 ---
 
@@ -40,7 +40,7 @@ node app.js
 ![Các khu vực](khuvuc.jpg)
 ---
 
-### Giám sát các thông số đã được vẽ thành biểu đồ
+### Các thông số đã được vẽ thành biểu đồ
 ![Biểu đồ nhiệt](nhiet.jpg)
 ---
 
