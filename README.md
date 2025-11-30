@@ -6,7 +6,7 @@ Dự án này gồm:
 - Trước khi vào thì cần đăng ký tài khoản người dùng, phần mềm Web sẽ giúp người dùng quản lý được những khu vực đã lắp đặt thiết bị để theo dõi thông số của những khu vực đó
 - Chú ý: IP điền để thêm thiết bị là IP của ESP32, khi truy cập vào mỗi đường mạng khác nhau IP sẽ thay đổi random
 
-## Hướng dẫn để chạy dự án
+## 📚 Hướng dẫn để chạy dự án
 ### 1️⃣ Sau khi tải dự án về sẽ có 2 folder
 ![Hai folder chính](Hai_folder.jpg)
 ---
@@ -18,15 +18,16 @@ Thực hiện: `node sync.js` kết quả phải là `Database synced`
 Sau đó: `node app.js` để bắt đầu chạy dự án, copy link: `http://localhost:3001/login` dán vào trình duyệt để trải nghiệm
 
 ## 📸 Demo các tính năng
+
 ### Đăng nhập, đăng ký và thiếp lập các khu vực đo, giám sát
-[Demo đăng nhập](Dang_nhap.mp4)
+[Demo đăng nhập](Video_dang_nhap.mp4)
 ---
 
 ### Quản lý, giám sát các khu vực đã đặt thiết bị đo
-[Demo quản lý](Quan_ly.mp4)
+[Demo quản lý](Video_quan_ly.mp4)
 ---
 
-## Kiến trúc hệ thống
+## 🏗️Kiến trúc hệ thống
 ![System Architecture](Kien_truc.jpg)
 ---
 
