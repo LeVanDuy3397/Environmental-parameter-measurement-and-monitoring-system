@@ -185,8 +185,8 @@ async function getData(ip) { // đây chính là hàm mà khi gọi, server sẽ
 }
 
 /**
- * Check status of all rooms and update their online status
- * @param {Array} rooms - Array of Room model instances
+ * Check status of all regions and update their online status
+ * @param {Array} regions - Array of Region model instances
  * @returns {Promise<void>}
  */
 async function checkAllDevicesStatus(regions) {

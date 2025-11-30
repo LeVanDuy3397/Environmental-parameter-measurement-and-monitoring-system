@@ -14,17 +14,62 @@ Dự án này gồm:
 ### 2️⃣ "cd" vào folder Esp32 thực hiện debug sau đó upload vào esp32
 
 ### 3️⃣ "cd" vào folder Web để chạy Server Web
-Thực hiện: `node sync.js` kết quả phải là `Database synced`
-Sau đó: `node app.js` để bắt đầu chạy dự án, copy link: `http://localhost:3001/login` dán vào trình duyệt để trải nghiệm
+- Thực hiện: 
+```
+node sync.js
+```
+kết quả phải là `Database synced`
+- Sau đó thực hiện:
+```
+node app.js
+```
+để bắt đầu chạy dự án, copy link: `http://localhost:3001/login` dán vào trình duyệt để trải nghiệm
 
 ## 📸 Demo các tính năng
 
-### Đăng nhập, đăng ký và thiếp lập các khu vực đo, giám sát
-[Demo đăng nhập](Video_dang_nhap.mp4)
+### Đăng nhập, đăng ký
+![Đăng nhập](dangnhap.jpg)
+---
+### thiếp lập các khu vực đo, giám sát
+![Trang chính](chinh.jpg)
 ---
 
-### Quản lý, giám sát các khu vực đã đặt thiết bị đo
-[Demo quản lý](Video_quan_ly.mp4)
+![Thiết lập](them.jpg)
+---
+
+![Các khu vực](khuvuc.jpg)
+---
+
+### Giám sát các thông số đã được vẽ thành biểu đồ
+![Biểu đồ nhiệt](nhiet.jpg)
+---
+
+![Biểu đồ độ ẩm](am.jpg)
+---
+
+![Biểu đồ nồng độ bụi](bui.jpg)
+---
+
+### Xem lại lịch sử đã ghi nhận của từng khu vực
+![Lịch sử](lichsu.jpg)
+---
+
+![Lịch sử](lichsu1.jpg)
+---
+
+### Lưu vào cơ sở dữ liệu
+![Cơ sở dữ liệu](csdl.jpg)
+---
+
+### Mạch phần cứng đã nối dây
+![Sơ đồ mạch](sodo.jpg)
+---
+
+![Mạch](mach.jpg)
+---
+
+### Màn hình LCD hiển thị
+![Màn hình](lcd.jpg)
 ---
 
 ## 🏗️Kiến trúc hệ thống

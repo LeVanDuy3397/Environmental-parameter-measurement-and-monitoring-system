@@ -66,8 +66,8 @@ router.get('/data_from_region/:id', async (req, res) => {
     if (Data) {
       res.json({
         success: true,
-        roomId: region.id,
-        roomName: region.name,
+        regionId: region.id,
+        regionName: region.name,
         ...Data
       });
     } else {

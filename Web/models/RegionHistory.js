@@ -6,7 +6,7 @@ const RegionHistory = sequelize.define('RegionHistory', {
   regionId: { type: DataTypes.INTEGER, allowNull: false },
   temperature: { type: DataTypes.FLOAT, allowNull: false },
   humidity: { type: DataTypes.FLOAT, allowNull: false },
-  dust: { type: DataTypes.STRING, allowNull: false },
+  dust: { type: DataTypes.FLOAT, allowNull: false },
   createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW }
 });
 
