@@ -6,10 +6,11 @@ Dự án này gồm:
 - Trước khi vào thì cần đăng ký tài khoản người dùng, Web sẽ giúp người dùng quản lý được những khu vực đã lắp đặt thiết bị để theo dõi sự thay đổi của nhiệt độ, độ ẩm và nồng độ bụi trong môi trường 
 - Chú ý: IP điền để thêm thiết bị là IP của ESP32, khi truy cập vào mỗi đường mạng khác nhau IP sẽ thay đổi random
 
-## link video demo chi tiết
+## 📸link video demo chi tiết
+### Video demo chức năng đăng nhập
 [![Video demo chức năng đăng nhập](dangnhap.jpg)](https://www.youtube.com/watch?v=x5_QpFcY5to)
 ---
-
+### Video demo chức năng quản lý
 [![Video demo chức năng quản lý](them.jpg)](https://www.youtube.com/watch?v=EqmMwPBaEXI)
 ---
 
